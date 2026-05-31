@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wellbeing & Coping Check-In</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F7F3EE; --bg2: #EDE8E0; --card: #FAFAF8;
+    --text: #2C2420; --muted: #8B7B6B; --faint: #A89C90;
+    --border: #DDD5C8; --border2: #E8E2DA;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --terracotta: #C17B4E; --blue: #5B7FA6; --purple: #7A6B8A;
+    --green: #5A8A6A; --amber: #C9972A;
+    --radius: 12px;
+  }
+  html { font-size: 16px; }
+  body {
+    background: linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%);
+    min-height: 100vh; font-family: var(--serif); color: var(--text);
+  }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding-bottom: 80px; }
+  .wrap { width: 100%; max-width: 520px; padding: 0 24px; }
+
+  /* Buttons */
+  .btn { display: block; width: 100%; padding: 15px; border-radius: var(--radius); border: none;
+    font-family: var(--serif); font-size: 15px; cursor: pointer; letter-spacing: .04em;
+    transition: opacity .15s, background .15s; }
+  .btn:disabled { background: var(--border) !important; color: var(--faint) !important; cursor: not-allowed; }
+  .btn-dark  { background: var(--text); color: #F7F3EE; }
+  .btn-terra { background: var(--terracotta); color: #FFF7F0; }
+  .btn-blue  { background: var(--blue); color: #F0F4F8; }
+  .btn-purple{ background: var(--purple); color: #F5F2F8; }
+  .btn-ghost { background: none; border: 1px solid var(--border); color: var(--text); font-size: 12px; padding: 9px 22px; width: auto; }
+
+  /* Options */
+  .opts { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; }
+  .opt { padding: 13px 20px; border-radius: var(--radius); border: 2px solid var(--border2);
+    background: var(--card); color: var(--text); font-family: var(--serif); font-size: 15px;
+    cursor: pointer; text-align: left; display: flex; align-items: center; justify-content: space-between;
+    transition: all .15s; width: 100%; }
+  .opt.selected { border-color: var(--accent, var(--terracotta)); background: color-mix(in srgb, var(--accent, var(--terracotta)) 9%, white); color: var(--accent, var(--terracotta)); }
+  .opt-dot { width: 17px; height: 17px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; transition: all .15s; }
+  .opt.selected .opt-dot { border: 5px solid var(--accent, var(--terracotta)); }
+
+  /* Progress */
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 10px; }
+  .progress-fill { height: 100%; border-radius: 2px; background: var(--terracotta); transition: width .5s; }
+  .q-header { display: flex; align-items: center; justify-content: space-between; padding-top: 20px; }
+  .back-btn { background: none; border: none; font-family: var(--serif); font-size: 12px;
+    color: var(--muted); cursor: pointer; letter-spacing: .08em; text-transform: uppercase; padding: 6px 0; }
+  .q-counter { text-align: right; }
+  .q-counter .part-label { font-size: 9px; color: var(--faint); letter-spacing: .1em; text-transform: uppercase; font-family: var(--sans); display: block; }
+  .q-counter .n { font-size: 11px; color: var(--muted); font-family: var(--sans); }
+
+  /* Question */
+  .q-body { margin-top: 28px; }
+  .dim-label { display: inline-flex; align-items: center; gap: 6px; font-size: 11px;
+    letter-spacing: .12em; text-transform: uppercase; font-family: var(--sans); margin-bottom: 6px; }
+  .dim-desc { font-size: 12px; color: var(--muted); font-family: var(--sans); margin-bottom: 14px; line-height: 1.5; }
+  .q-text { font-size: 22px; line-height: 1.45; color: var(--text); margin-bottom: 28px; font-weight: normal; }
+
+
+
+  /* Bridge */
+  .bridge { text-align: center; padding: 70px 24px 0; max-width: 520px; margin: 0 auto; }
+  .bridge-emoji { font-size: 40px; margin-bottom: 16px; }
+  .bridge h2 { font-size: 26px; font-weight: normal; margin-bottom: 14px; line-height: 1.3; }
+  .bridge p { font-size: 15px; line-height: 1.75; color: #5A4D44; font-family: var(--sans); margin-bottom: 32px; }
+
+  /* Divider */
+  .divider { display: flex; align-items: center; gap: 10px; margin: 32px 0 12px; }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-label { font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: .04em; font-family: var(--sans); white-space: nowrap; }
+
+  /* Results */
+  .summary-para { font-size: 17px; line-height: 1.85; color: var(--text); font-weight: normal; margin-bottom: 24px; }
+  .datestamp { font-size: 10px; color: var(--faint); letter-spacing: .12em; text-transform: uppercase; font-family: var(--sans); margin-bottom: 12px; }
+  .score-row { display: flex; align-items: center; gap: 16px; padding: 16px 18px;
+    background: var(--card); border-radius: var(--radius); margin-bottom: 12px;
+    border-left: 4px solid var(--stage-col, var(--terracotta)); border: 1px solid color-mix(in srgb, var(--stage-col, var(--terracotta)) 20%, transparent);
+    border-left-width: 4px; }
+  .score-big { font-size: 44px; font-weight: normal; line-height: 1; letter-spacing: -1px; flex-shrink: 0; }
+  .score-meta { flex: 1; }
+  .score-label { font-size: 10px; color: var(--faint); letter-spacing: .1em; text-transform: uppercase; font-family: var(--sans); margin-bottom: 5px; }
+  .stage-badge { display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px; border-radius: 20px; }
+  .stage-badge-num { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-family: var(--sans); }
+  .stage-badge-sep { width: 1px; height: 10px; opacity: .5; }
+  .stage-badge-name { font-size: 12px; font-family: var(--serif); }
+  .stage-track { display: flex; gap: 3px; }
+  .stage-bar { flex: 1; border-radius: 3px; transition: all .3s; }
+  .stage-labels { display: flex; justify-content: space-between; margin-top: 4px; }
+  .stage-labels span { font-size: 9px; color: var(--faint); font-family: var(--sans); }
+  .action-prompt { display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px;
+    background: var(--card); border-radius: 10px; border: 1px solid var(--border2); margin: 12px 0 28px; }
+  .action-arrow { font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+  .action-text { font-size: 13px; line-height: 1.6; font-family: var(--sans); font-style: italic; }
+
+  /* Insight cards */
+  .insight-card { background: var(--card); border: 1px solid var(--border2); border-radius: var(--radius);
+    padding: 15px 18px; display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
+  .insight-emoji { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+  .insight-text { font-size: 14px; line-height: 1.7; font-family: var(--sans); }
+
+  /* DH bars */
+  .dh-dim { margin-bottom: 10px; }
+  .dh-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .dh-icon { font-size: 13px; width: 20px; text-align: center; }
+  .dh-name { font-size: 12px; color: #5A4D44; font-family: var(--sans); width: 90px; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 5px; background: var(--border2); border-radius: 3px; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+  .bar-pct { font-size: 12px; font-family: var(--sans); font-weight: 600; width: 34px; text-align: right; }
+  .dh-fb { font-size: 12px; color: #6B5C52; font-family: var(--sans); line-height: 1.55; margin-left: 28px; }
+
+  /* Coping */
+  .coping-card { background: var(--card); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 8px; }
+  .coping-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .coping-label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-family: var(--sans); margin-bottom: 4px; }
+  .coping-score { font-size: 28px; line-height: 1; }
+  .coping-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-family: var(--sans); }
+  .coping-subs { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+  .coping-sub { display: flex; align-items: center; gap: 10px; }
+  .coping-sub-label { flex: 1; font-size: 11px; color: #5A4D44; font-family: var(--sans); line-height: 1.4; }
+  .coping-sub-bar { width: 56px; height: 4px; background: var(--border2); border-radius: 2px; flex-shrink: 0; }
+  .coping-sub-fill { height: 100%; border-radius: 2px; opacity: .75; transition: width 1s ease; }
+
+  /* Domain cards */
+  .domain-card { background: var(--card); border-radius: 10px; padding: 13px 16px; margin-bottom: 10px; border: 1px solid transparent; }
+  .domain-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+  .domain-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-family: var(--sans); }
+  .domain-right { display: flex; align-items: center; gap: 7px; }
+  .domain-score { font-size: 16px; }
+  .risk-badge { padding: 2px 8px; border-radius: 20px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-family: var(--sans); }
+  .domain-fb { font-size: 12px; line-height: 1.6; color: #4A3F36; font-family: var(--sans); }
+
+  /* Chart containers */
+  .chart-wrap { position: relative; height: 240px; margin: 4px 0 10px; }
+  .donut-wrap { position: relative; height: 170px; }
+  .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
+  .donut-center-label { font-size: 9px; color: var(--faint); font-family: var(--sans); letter-spacing: .1em; text-transform: uppercase; }
+  .donut-legend { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #5A4D44; font-family: var(--sans); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Footer */
+  .results-footer { text-align: center; padding: 22px 0; border-top: 1px solid var(--border); margin-top: 8px; }
+  .results-footer p { font-size: 11px; color: var(--faint); line-height: 1.6; font-family: var(--sans); margin-bottom: 16px; }
+
+  /* Fade in animation */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeUp .4s ease forwards; }
+
+  /* Intro */
+  .intro-wrap { max-width: 520px; margin: 0 auto; padding: 56px 24px 0; }
+  .part-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+  .part-item { display: flex; gap: 14px; padding: 12px 16px; border-radius: 10px;
+    background: var(--card); border: 1px solid transparent; }
+  .part-item-title { font-size: 13px; font-family: var(--sans); font-weight: 600; }
+  .part-item-desc { font-size: 11px; font-family: var(--sans); color: var(--muted); }
+
+  /* Thank you screen */
+  .thankyou { text-align: center; padding: 80px 24px 0; max-width: 520px; margin: 0 auto; }
+  .thankyou h2 { font-size: 28px; font-weight: normal; margin-bottom: 16px; }
+  .thankyou p { font-size: 15px; line-height: 1.75; color: #5A4D44; font-family: var(--sans); margin-bottom: 12px; }
+
+
+  /* Email capture */
+  .email-wrap { max-width:520px; margin:0 auto; padding:60px 24px 0; text-align:center; }
+  .email-wrap h2 { font-size:27px; font-weight:normal; margin-bottom:14px; line-height:1.3; }
+  .email-wrap p  { font-size:15px; line-height:1.75; color:#5A4D44; font-family:var(--sans); margin-bottom:0; }
+  .email-input { width:100%; padding:14px 18px; border-radius:var(--radius); border:2px solid var(--border2);
+    background:var(--card); font-family:var(--sans); font-size:15px; color:var(--text); outline:none;
+    transition:border-color .15s; margin:20px 0 12px; box-sizing:border-box; }
+  .email-input:focus { border-color:var(--terracotta); }
+  .email-consent { font-size:11px; color:var(--faint); font-family:var(--sans); line-height:1.6; margin-bottom:24px; }
+  .skip-link { background:none; border:none; color:var(--muted); font-family:var(--sans); font-size:13px;
+    cursor:pointer; text-decoration:underline; margin-top:10px; display:block; width:100%; text-align:center; }
+
+  @media (max-width: 540px) {
+    .q-text { font-size: 20px; }
+    .summary-para { font-size: 16px; }
+    .score-big { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================================================
+   CONFIGURATION — edit this section before deploying
+   ============================================================ */
+const CONFIG = {
+  // Paste your Google Apps Script web app URL here after setup
+  // Leave empty to run without data collection (results still shown)
+  ENDPOINT_URL: "https://script.google.com/macros/s/AKfycbwNwUhW_lvFK6zkwdT9zjoXJzmTNOUaJpVjPC_K2ctdlxLtLPo-Z6HeCRwESL3mJDAU/exec",
+
+  ORG_NAME: "Your Organisation",
+
+};
+
+/* ============================================================
+   DATA — questions, stages, scoring
+   ============================================================ */
+const STAGES = [
+  { n:1,  range:[0,8],    name:"The Drive",                   col:"#5A8A6A", txt:"#3D6B52", narrative:"You're energised and motivated. The effort you're putting in feels purposeful and sustainable right now. This is a healthy baseline — staying aware of how things evolve is what keeps it that way.", action:"Keep doing what's working. A regular check-in is a great habit to maintain." },
+  { n:2,  range:[9,16],   name:"Pushing Harder",              col:"#6A9A7A", txt:"#4A7A5A", narrative:"You're working with real commitment and it's showing results. The pace can feel exhilarating — just keep an eye on whether rest is keeping up with the effort you're putting out.", action:"Protect your recovery time as actively as you protect your work time." },
+  { n:3,  range:[17,25],  name:"Early Signals",               col:"#8AB870", txt:"#5A8040", narrative:"You're starting to skip some of the smaller things that usually restore you — an early night, a proper break, a conversation with a friend. These feel like minor trade-offs, but they add up.", action:"Pick one small restorative habit to protect this week and treat it as non-negotiable." },
+  { n:4,  range:[26,33],  name:"Mounting Pressure",           col:"#C9C458", txt:"#7A7830", narrative:"The demands have been stacking up and you can feel it. You may be brushing off your own concerns — or those from people around you. This is a useful moment to pause while the signals are still early.", action:"Identify one thing on your plate that you could reduce, delegate, or defer." },
+  { n:5,  range:[34,42],  name:"Shifting Priorities",         col:"#D4A84B", txt:"#8A6820", narrative:"Things that used to matter — time off, relationships, doing things just for enjoyment — have quietly slipped down the list. The focus on getting through it all is real, and so is the cost.", action:"Schedule something purely for you in the next 48 hours — and keep it." },
+  { n:6,  range:[43,50],  name:"Pushing Through",             col:"#C9972A", txt:"#8A6010", narrative:"You're aware things aren't quite right, but you're managing by pressing forward. This is one of the most common stress zones — and one of the most important to address. The mind tends to narrow here, making it harder to see options available to you.", action:"Talk to someone you trust about how things have been. An outside perspective often reveals options you can't see alone." },
+  { n:7,  range:[51,58],  name:"Pulling Back",                col:"#C48040", txt:"#8A5020", narrative:"You may have started to withdraw a little — fewer plans, less enthusiasm, relying more on routine. This is your system's way of conserving energy. It's a meaningful signal.", action:"Consider speaking with a professional — even one conversation can reopen possibilities that feel closed right now." },
+  { n:8,  range:[59,67],  name:"Under Significant Strain",    col:"#C17B4E", txt:"#8A4A20", narrative:"Your stress is starting to affect your behaviour and relationships in ways you may be noticing. This isn't a weakness — it's what sustained high pressure does over time. Some support now, whether from trusted people or a professional, is a genuinely worthwhile step.", action:"Please reach out — to a friend, a GP, or a therapist. This is what support is for." },
+  { n:9,  range:[68,75],  name:"Disconnection",               col:"#B86040", txt:"#803020", narrative:"You may be feeling detached from yourself, from others, from things that used to feel meaningful. At this stage, self-guided recovery has real limits. Reaching out to a professional is not just useful, it's important.", action:"Please speak to your GP or a mental health professional as a priority step this week." },
+  { n:10, range:[76,83],  name:"Running on Empty",            col:"#A85040", txt:"#702010", narrative:"The sense of depletion at this stage is real and serious. Please don't try to push through this alone. Speaking to your GP, a therapist, or a trusted person is an important next step — and recovery from here is absolutely possible.", action:"Please contact a healthcare professional today." },
+  { n:11, range:[84,92],  name:"Crisis Point",                col:"#903838", txt:"#602020", narrative:"This level of stress warrants genuine attention and professional support. Please speak to your GP or a mental health professional.", action:"Please contact a healthcare professional as soon as possible. You deserve proper support." },
+  { n:12, range:[93,100], name:"Seeking Support is Essential",col:"#782828", txt:"#501818", narrative:"Your score suggests you're in a very difficult place right now. Please reach out to a medical professional or mental health service as soon as you can. You do not have to manage this alone.", action:"Please contact your GP, a crisis line, or emergency mental health services today." },
+];
+
+// Deep health: 6 dimensions, 2 questions each (indices 0–11)
+const DH_DIMS = [
+  { id:"physical",     label:"Physical",     icon:"⚡", col:"#5A8A6A", desc:"Feeling vibrant, energised, and functioning well",
+    qs:["How physically energised and vital do you feel on an average day?","How rested and recovered do you feel when you wake up?"],
+    low:"Your physical foundation — energy and sleep — is under noticeable strain. Restoring these tends to have the highest ripple effect on everything else.",
+    med:"Your physical energy and sleep are holding, but there's room to improve. Even modest gains in recovery tend to shift a lot of other things for the better.",
+    high:"Your physical energy looks strong. A rested body gives you significantly more capacity to handle everything else — a real asset." },
+  { id:"emotional",    label:"Emotional",    icon:"💛", col:"#C9972A", desc:"Recognising, expressing, and working through emotions",
+    qs:["How aware are you of what you're feeling and what's driving those feelings?","How well can you calm yourself down when you're stressed, upset, or anxious?"],
+    low:"Your emotional self-awareness and regulation feel stretched. Building even one small practice around noticing what you're feeling — without judgement — can start to rebuild this foundation.",
+    med:"You have some emotional awareness but calming down under pressure can be a challenge. That awareness is the important starting point.",
+    high:"Your emotional self-awareness and ability to regulate under pressure are genuine strengths — one of the most valuable capacities in managing stress." },
+  { id:"mental",       label:"Mental",       icon:"🔷", col:"#5B7FA6", desc:"Being alert, focused, and confident in your own judgement",
+    qs:["How mentally sharp, clear, and focused do you feel on an average day?","How confident do you feel in your ability to handle whatever comes up?"],
+    low:"Your mental clarity and confidence feel depleted. Reducing the number of decisions and inputs in your day — even temporarily — can make a meaningful difference.",
+    med:"Your mental function is holding but not at its sharpest. Protecting some genuine uninterrupted thinking time is usually the highest-leverage change here.",
+    high:"Your mental clarity and self-confidence are looking strong — lean on that clear-headedness when pressure makes everything feel more complicated than it is." },
+  { id:"existential",  label:"Existential",  icon:"✨", col:"#7A6B8A", desc:"Feeling a sense of meaning, purpose, and values alignment",
+    qs:["How connected do you feel to a sense of meaning or purpose in what you do?","How well does the way you're living right now reflect your deeper values?"],
+    low:"A sense of meaning and values alignment feels harder to access right now. Small reconnections with what matters most to you can be surprisingly restorative.",
+    med:"You have a sense of purpose but there's some distance between how you're living and what you most value. That gap is usually closable with small, intentional changes.",
+    high:"You have a clear sense of what matters and why, and your life broadly reflects those values — one of the most powerful stabilisers when stress gets high." },
+  { id:"relational",   label:"Relational",   icon:"🤝", col:"#C17B4E", desc:"Feeling connected, supported, and authentically known",
+    qs:["How supported and genuinely connected do you feel with the people around you?","How authentic can you be with the people you spend the most time with?"],
+    low:"Your sense of connection and support from others is lower than you'd want. Even one genuine conversation with someone you trust can shift this more than you'd expect.",
+    med:"You have some connection around you, but the depth or authenticity of support could be stronger. Being more open about what you're carrying is often the step that changes this.",
+    high:"The support and authentic connection around you is a genuine resource — arguably the most important protective factor when stress is high." },
+  { id:"environmental",label:"Environmental",icon:"🏡", col:"#4A7A8A", desc:"Your surroundings actively supporting your health and goals",
+    qs:["How well does your home and daily environment actively support your wellbeing?","How safe, stable, and supportive does your broader work and community context feel?"],
+    low:"Your environment may be working against your recovery rather than supporting it. Small, deliberate changes to your immediate surroundings can have an outsized effect.",
+    med:"Your environment is broadly okay, but there's room to make it work harder for you. A few deliberate changes can shift the conditions for recovery meaningfully.",
+    high:"Your environment looks like it's supporting you well — your surroundings are active contributors to your wellbeing, which is an underrated foundation." },
+];
+
+// Stress: 4 domains, 4 questions each (indices 0–15)
+const S_DOMAINS = [
+  { id:"workload",  label:"Life Demands",    short:"Demands", icon:"⚖️", col:"#C17B4E",
+    qs:["How often do your commitments leave you with no time for yourself?","How often do you feel like you can't keep up with what's being asked of you?","How often do you say yes to things even when you're already stretched thin?","How often does your to-do list feel endless, no matter how much you complete?"],
+    low:"Your commitments feel well-balanced. You've protected some space for yourself alongside everything else — worth being intentional about keeping.",
+    med:"Your schedule is filling up and you're starting to feel it. Noticing this now means you can review what's on your plate before things get tighter.",
+    high:"Your commitments have been building up and there's little space left for you. You can see it clearly now — and that's the most important first step." },
+  { id:"cognitive", label:"Mental Space",    short:"Mind",    icon:"🧠", col:"#5B7FA6",
+    qs:["How often do you struggle to concentrate or make even simple decisions?","How often does your mind keep running even when you're trying to rest?","How often do you feel mentally foggy or scattered during the day?","How often does switching between tasks feel more draining than it used to?"],
+    low:"Your headspace is in good shape. You're able to think clearly and wind down — a real advantage worth protecting.",
+    med:"Your mental load is a bit heavier than usual. Clarity takes more effort and switching off feels harder. Noticing this early makes it much easier to address.",
+    high:"Your mind is carrying a lot right now. Even small reductions in mental load tend to make a noticeable difference quickly." },
+  { id:"emotional", label:"Mood & Emotions", short:"Mood",    icon:"🫀", col:"#7A6B8A",
+    qs:["How often do you feel emotionally flat or disconnected from things that usually matter to you?","How often do you feel irritable or reactive in ways that catch you off guard?","How often does it feel like you're going through the motions rather than genuinely present?","How often do you feel like a shorter version of yourself — less patient, less curious, less you?"],
+    low:"Your emotional wellbeing looks settled. You're connecting, feeling, and responding with flexibility — a genuine strength.",
+    med:"You're noticing some emotional shifts — a shorter fuse, or patches of feeling flat. These are useful signals worth listening to.",
+    high:"Your emotions are giving you clear information right now. Feeling more reactive or more distant than usual is a meaningful signal — and checking in is already a positive response." },
+  { id:"energy",    label:"Rest & Renewal",  short:"Renewal", icon:"🔋", col:"#5A8A6A",
+    qs:["How often do you wake up already tired, even after sleeping through the night?","How often does rest feel like something you have to justify or earn?","How often are you running on willpower rather than actual energy?","How often do you dread the week ahead, even when you're supposed to be resting?"],
+    low:"Your recovery looks healthy. Rest is genuinely restoring you and you're bringing real energy to your days.",
+    med:"Your energy is holding, but the quality of rest is worth a closer look. Ask whether rest is truly restoring you, or whether you're mainly pushing through on discipline.",
+    high:"Your energy levels are giving you important information. Running low isn't a weakness — it's data. Catching it now means you can act while the changes are still relatively small." },
+];
+
+// Coping: 5 questions (indices 0–4)
+const COPING_QS = [
+  { id:"calm",     q:"When you're under pressure, how well can you slow down, think clearly, and avoid just reacting?" },
+  { id:"habits",   q:"How well can you manage difficult feelings without leaning on food, alcohol, scrolling, or other crutches?" },
+  { id:"adapt",    q:"When plans or routines get disrupted, how well do you adapt without it derailing you?" },
+  { id:"reach",    q:"How readily do you reach out to others for help, perspective, or support when you're struggling?" },
+  { id:"belief",   q:"How strongly do you believe that your efforts to manage stress and make changes will actually make a difference?" },
+];
+
+const STRESS_OPTS = ["Rarely","Sometimes","Often","Almost Always"];
+const POS_OPTS    = ["Not at all","A little","Quite","Very much"];
+const TOTAL_DH    = DH_DIMS.length * 2;  // 12
+const TOTAL_S     = S_DOMAINS.length * 4; // 16
+const TOTAL_C     = COPING_QS.length;     // 5
+const TOTAL_Q     = TOTAL_DH + TOTAL_S + TOTAL_C; // 33
+
+/* ============================================================
+   STATE
+   ============================================================ */
+function uuid() { return 'xxxxxxxx'.replace(/x/g, () => (Math.random()*16|0).toString(16)); }
+
+const state = {
+  phase: 'intro',
+  dhA: {},   // key: 0–11, val: 1–4
+  sA:  {},   // key: 0–15, val: 1–4
+  cA:  {},   // key: "calm"|"habits"|"adapt"|"reach"|"belief", val: 1–4
+  dhIdx: 0,
+  sIdx: 0,
+  cIdx: 0,
+  sessionId: uuid(),
+  startTime: Date.now(),
+  email: null,
+  submitted: false,
+  submitError: false,
+};
+
+/* ============================================================
+   SCORING HELPERS
+   ============================================================ */
+function toPct(total, n) { return Math.round(((total - n) / (n * 3)) * 100); }
+
+function getStage(pct) { return STAGES.find(s => pct >= s.range[0] && pct <= s.range[1]) || STAGES[0]; }
+
+function computeResults() {
+  // Deep health: 2 questions per dimension
+  const dh = DH_DIMS.map((dim, di) => {
+    const scores = [state.dhA[di*2] || 1, state.dhA[di*2+1] || 1];
+    const pct = toPct(scores[0]+scores[1], 2);
+    return { ...dim, pct };
+  });
+
+  // Stress: 4 questions per domain
+  const stress = S_DOMAINS.map((dom, di) => {
+    const scores = [0,1,2,3].map(qi => state.sA[di*4+qi] || 1);
+    const pct = toPct(scores.reduce((a,b)=>a+b,0), 4);
+    return { ...dom, pct };
+  });
+
+  const stressPct = Math.round(stress.reduce((s,d)=>s+d.pct,0) / stress.length);
+  const stage = getStage(stressPct);
+
+  // Coping
+  const copingScores = COPING_QS.map(q => state.cA[q.id] || 1);
+  const copingPct = toPct(copingScores.reduce((a,b)=>a+b,0), COPING_QS.length);
+
+  return { dh, stress, stressPct, stage, copingPct, copingScores };
+}
+
+function getDomainRisk(pct) {
+  return pct < 40 ? { label:"Balanced", col:"#5A8A6A", bg:"#E8F2EC" }
+       : pct < 70 ? { label:"Moderate",  col:"#C9972A", bg:"#FDF3DC" }
+       :            { label:"Elevated",  col:"#C17B4E", bg:"#FBF1E8" };
+}
+function getCopingBand(pct) {
+  return pct >= 65 ? { label:"Strong",        col:"#5A8A6A" }
+       : pct >= 40 ? { label:"Developing",    col:"#C9972A" }
+       :             { label:"Needs support",  col:"#B86040" };
+}
+
+/* ============================================================
+   INSIGHT GENERATION
+   ============================================================ */
+function makeSummary(stage, dh, copingPct) {
+  const sorted = [...dh].sort((a,b)=>b.pct-a.pct);
+  const top = sorted[0], bottom = sorted[sorted.length-1];
+
+  const openings = [
+    "Things look genuinely healthy right now — your stress load is light and your wellbeing is in good shape.",
+    "Things look broadly positive, though the pace is picking up and a few early signals are worth paying attention to.",
+    "You're doing reasonably well overall, though the demands are building and some smaller restorative habits have started to slip.",
+    "The pressure is clearly mounting. You're holding things together, but the accumulation is real and worth addressing now.",
+    "You're managing — but it's costing more than it shows on the surface. Some things that used to matter have quietly slipped down the list.",
+    "You're in a zone where you're still functioning, but the effort required is genuinely unsustainable without something changing.",
+    "You're under real pressure, and it's showing up in your energy, your mood, and your ability to be fully present. This is a meaningful signal.",
+    "You're carrying a significant load right now, and the signs are showing across multiple areas of your life. This warrants real attention.",
+    "You're under serious strain. What you're experiencing isn't a willpower issue — it's what sustained, unaddressed pressure does over time.",
+    "Your results suggest your system is running on very little reserve. Please don't try to push through this without support.",
+    "You're in a place that needs professional attention. This level of pressure goes beyond what self-management alone can address.",
+    "Your results are telling you something very important. Please reach out to a professional — this is too much to carry on your own.",
+  ];
+
+  const resourceMsgs = {
+    physical:"Your physical energy and sleep are a genuine asset — a rested body gives you far more capacity to handle everything else.",
+    emotional:"Your emotional self-awareness is one of your clearest resources — knowing what you're feeling and why is the foundation of effective coping.",
+    mental:"Your mental clarity and confidence in your own judgement are strong, which gives you a real platform to work from.",
+    existential:"Having a clear sense of meaning and purpose is one of the most powerful stabilisers available to you — and yours looks intact.",
+    relational:"The support and authentic connection around you is your strongest resource right now — more valuable than you may realise.",
+    environmental:"Your environment is actively working with you rather than against you — better conditions for recovery than many people have.",
+  };
+
+  const gapMsgs = {
+    physical:"The area most in need of attention is your physical recovery — sleep and energy are often the first things to go under pressure, and restoring them tends to shift everything else.",
+    emotional:"Your emotional self-awareness and regulation are the dimension most in need of attention — even small practices here tend to have an outsized effect on everything else.",
+    mental:"Mental clarity and confidence are the areas under most strain — reducing what's competing for your attention is where the highest-leverage changes live.",
+    existential:"A sense of meaning and values alignment is harder to access than it should be. Reconnecting with what genuinely matters tends to be more restorative than most other interventions.",
+    relational:"Your sense of genuine connection and support is the area that needs most attention — and it's also one of the most powerful levers for recovery when you invest in it.",
+    environmental:"Your environment doesn't seem to be actively supporting your recovery right now — and small changes here can make a bigger difference than most people expect.",
+  };
+
+  const parts = [openings[Math.min(stage.n-1, 11)]];
+  if (top.pct >= 60 && resourceMsgs[top.id]) parts.push(resourceMsgs[top.id]);
+  if (bottom.pct < 45 && gapMsgs[bottom.id]) parts.push(gapMsgs[bottom.id]);
+  if (copingPct >= 65 && stage.n >= 5) parts.push("Importantly, your coping capacity is strong — you have more tools available than you might realise right now, and that matters.");
+  else if (copingPct < 40 && stage.n >= 4) parts.push("Your coping capacity needs attention alongside the stress itself — building even one reliable coping practice tends to shift the balance more than anything else.");
+  return parts.join(" ");
+}
+
+function makeInsights(stage, dh, copingPct) {
+  const byId = Object.fromEntries(dh.map(d=>[d.id,d.pct]));
+  const sorted = [...dh].sort((a,b)=>b.pct-a.pct);
+  const top = sorted[0], bottom = sorted[sorted.length-1];
+  const insights = [];
+
+  if (stage.n >= 7 && copingPct >= 60)
+    insights.push({e:"💪",t:"Despite the pressure you're under, your coping capacity is a genuine asset. You have more tools available than you might realise — the key is using them deliberately rather than waiting for things to ease up on their own."});
+  else if (stage.n >= 6 && copingPct < 40)
+    insights.push({e:"⚠️",t:"You're under notable pressure at a time when your coping resources feel stretched. Building even one reliable coping practice — a person to call, a wind-down routine, a breathing habit — can begin to shift the balance."});
+  else if (stage.n <= 3 && copingPct >= 65)
+    insights.push({e:"🌱",t:"Your stress is manageable and your coping capacity looks strong — a healthy combination. The work now is maintaining these conditions intentionally rather than assuming they'll hold on their own."});
+  else if (stage.n >= 5 && copingPct >= 50)
+    insights.push({e:"🧭",t:"Your stress level is building, but you have real capacity to respond to it. What matters most now is choosing to use that capacity — reaching out, making a change, giving yourself genuine recovery time — rather than waiting it out."});
+
+  if (top.pct >= 60) {
+    const m = {physical:"Your physical energy and sleep are standing out as real strengths. Protect this actively — a rested body gives you significantly more capacity to deal with everything else.",emotional:"Your emotional self-awareness is one of your clearest strengths. Being able to notice and name what you're feeling is the foundation of all effective stress management.",mental:"Your mental clarity and confidence are strong right now. Lean on that clear-headedness when pressure makes everything feel more complicated than it is.",existential:"You have a clear sense of what matters and why — one of the most powerful stabilisers when stress gets high. Come back to this anchor deliberately when things feel unclear.",relational:"The support and authentic connection around you is a genuine resource. Lean on it more than you might naturally think to — it's one of the most important protective factors.",environmental:"Your environment is actively supporting you rather than working against you. That's an underrated and important foundation."};
+    if (m[top.id]) insights.push({e:"⭐",t:m[top.id]});
+  }
+
+  if (bottom.pct < 45) {
+    const m = {physical:"Your physical energy and sleep look like the area most in need of attention. Poor sleep amplifies every other source of stress — improving here often has the highest return of any single change.",emotional:"Your emotional self-awareness and regulation feel stretched. A brief daily practice of noticing what you're feeling — without trying to fix it — can start to rebuild this foundation.",mental:"Your mental sharpness and confidence feel depleted. Protecting even 20 minutes of genuinely uninterrupted time daily tends to restore this faster than almost anything else.",existential:"A sense of meaning and values alignment feels distant. Even brief reconnection with what genuinely matters — a journal entry, a walk, a real conversation — can interrupt a cycle that otherwise feeds itself.",relational:"Your sense of support and genuine connection is lower than you'd want. One real conversation with someone you trust is worth more than most other interventions right now.",environmental:"Your environment may be actively working against your recovery. Small, deliberate changes to your surroundings tend to have a surprisingly large effect on how you function day to day."};
+    if (m[bottom.id]) insights.push({e:"🔍",t:m[bottom.id]});
+  }
+
+  if (stage.n >= 6 && byId.relational < 40 && copingPct < 50)
+    insights.push({e:"🤝",t:"At this stage of stress, isolation and low coping capacity reinforce each other. Reaching out — even briefly — tends to be the most important first action, because connection itself rebuilds the capacity to cope."});
+  else if (stage.n >= 5 && byId.existential < 40 && byId.mental < 50)
+    insights.push({e:"🔦",t:"When mental clarity and a sense of purpose both feel low at the same time, stress tends to feel heavier and more intractable than it actually is. Small reconnections with what matters can shift both at once."});
+  else if (byId.physical < 40 && byId.emotional < 50)
+    insights.push({e:"🌙",t:"Depleted physical energy and emotional strain deepen each other — poor sleep makes emotional regulation much harder, and emotional strain disrupts sleep. Prioritising sleep above almost everything else is often the highest-leverage entry point."});
+
+  return insights.slice(0,3);
+}
+
+
+/* ============================================================
+   EMAIL CAPTURE SCREEN
+   ============================================================ */
+function renderEmailCapture() {
+  return `
+  <div class="email-wrap fade-in">
+    <div style="font-size:38px;margin-bottom:16px">📬</div>
+    <h2>Your results are ready</h2>
+    <p>Would you like them sent to your inbox? You can save them, share them, or look back on them later.</p>
+    <input class="email-input" type="email" id="emailInput" placeholder="your@email.com"
+      value="${state.email||''}" oninput="state.email=this.value.trim()" onkeydown="if(event.key==='Enter')submitEmail()">
+    <p class="email-consent">By providing your email, you agree to ${CONFIG.ORG_NAME} using it to follow up about wellbeing support.</p>
+    <button class="btn btn-terra" onclick="submitEmail()">Send me my results</button>
+    <button class="skip-link" onclick="state.email=null;finishSurvey()">Skip — just show my results</button>
+  </div>`;
+}
+
+function submitEmail() {
+  const input = document.getElementById('emailInput');
+  const val = (input ? input.value : state.email || '').trim();
+  const valid = val && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  if (!valid) {
+    if (input) { input.style.borderColor='#B85450'; input.placeholder='Please enter a valid email address'; }
+    return;
+  }
+  state.email = val;
+  finishSurvey();
+}
+
+/* ============================================================
+   EMAIL HTML GENERATION (sent to Apps Script for relay)
+   ============================================================ */
+function generateEmailHTML(results) {
+  const { dh, stress, stressPct, stage, copingPct } = results;
+  const summary  = makeSummary(stage, dh, copingPct);
+  const insights = makeInsights(stage, dh, copingPct);
+  const copBand  = getCopingBand(copingPct);
+  const today    = new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+
+  function bar(pct, col) {
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-radius:3px;overflow:hidden"><tr>
+      <td width="${pct}%" style="height:5px;background:${col};line-height:5px;font-size:1px"> </td>
+      <td style="height:5px;background:#E8E2DA;line-height:5px;font-size:1px"> </td>
+    </tr></table>`;
+  }
+
+  function dimRow(icon, label, pct, col) {
+    return `<tr>
+      <td style="padding:5px 0;font-size:12px;color:#5A4D44;font-family:Helvetica,sans-serif;width:110px">${icon} ${label}</td>
+      <td style="padding:5px 8px">${bar(pct, col)}</td>
+      <td style="padding:5px 0;font-size:12px;font-weight:bold;color:${col};font-family:Helvetica,sans-serif;text-align:right;width:40px">${pct}%</td>
+    </tr>`;
+  }
+
+  const insightRows = insights.map(i =>
+    `<div style="background:#FAFAF8;border:1px solid #E8E2DA;border-radius:10px;padding:14px 16px;margin-bottom:10px">
+      <p style="font-size:14px;line-height:1.7;color:#2C2420;font-family:Helvetica,sans-serif;margin:0">${i.e} ${i.t}</p>
+    </div>`
+  ).join('');
+
+  const dhRows = dh.map(d => dimRow(d.icon, d.label, d.pct, d.col)).join('');
+  const sRows  = stress.map(d => dimRow(d.icon, d.short, d.pct, d.col)).join('');
+
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  </head>
+  <body style="margin:0;padding:20px;background:#F7F3EE;font-family:Georgia,serif">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;padding:32px 32px 24px;border:1px solid #DDD5C8">
+
+    <p style="font-size:10px;color:#A89C90;font-family:Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px">Your results · ${today} · ${CONFIG.ORG_NAME}</p>
+    <h1 style="font-size:24px;font-weight:normal;color:#2C2420;margin:0 0 20px;line-height:1.3">Your Wellbeing &amp; Coping Check-In</h1>
+
+    <p style="font-size:16px;line-height:1.85;color:#2C2420;margin:0 0 24px">${summary}</p>
+
+    <div style="background:#FAFAF8;border-radius:10px;padding:16px 18px;border-left:4px solid ${stage.col};margin-bottom:12px">
+      <p style="font-size:10px;color:#A89C90;font-family:Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin:0 0 6px">Stress score</p>
+      <div style="font-size:42px;font-weight:normal;color:${stage.txt};line-height:1;margin-bottom:8px">${stressPct}%</div>
+      <span style="display:inline-block;padding:4px 12px;border-radius:20px;background:${stage.col}22;font-size:12px;color:${stage.txt};font-family:Helvetica,sans-serif">Stage ${stage.n} · ${stage.name}</span>
+    </div>
+
+    <div style="background:#FAFAF8;border-radius:8px;padding:12px 16px;border:1px solid #E8E2DA;margin-bottom:28px">
+      <p style="font-size:13px;line-height:1.6;color:${stage.txt};font-family:Helvetica,sans-serif;font-style:italic;margin:0">→ ${stage.action}</p>
+    </div>
+
+    <h2 style="font-size:11px;font-family:Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.12em;color:#8B7B6B;margin:0 0 12px">What this means for you</h2>
+    ${insightRows}
+
+    <h2 style="font-size:11px;font-family:Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.12em;color:#8B7B6B;margin:24px 0 12px">Your wellbeing foundation</h2>
+    <table width="100%" cellpadding="0" cellspacing="4">${dhRows}</table>
+
+    <h2 style="font-size:11px;font-family:Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.12em;color:#8B7B6B;margin:20px 0 12px">Your stressors</h2>
+    <table width="100%" cellpadding="0" cellspacing="4">${sRows}</table>
+
+    <h2 style="font-size:11px;font-family:Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.12em;color:#8B7B6B;margin:20px 0 8px">Coping capacity</h2>
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="font-size:12px;color:#5A4D44;font-family:Helvetica,sans-serif;width:110px">🛡️ Overall</td>
+      <td style="padding:0 8px">${bar(copingPct, copBand.col)}</td>
+      <td style="font-size:12px;font-weight:bold;color:${copBand.col};font-family:Helvetica,sans-serif;text-align:right;width:40px">${copingPct}%</td>
+    </tr></table>
+
+    <div style="border-top:1px solid #DDD5C8;margin-top:28px;padding-top:16px">
+      <p style="font-size:11px;color:#A89C90;font-family:Helvetica,sans-serif;line-height:1.6;margin:0">
+        A self-awareness tool grounded in wellbeing and stress research. Not a clinical diagnosis.<br>
+        Stress stages based on Freudenberger &amp; North (1992). Wellbeing dimensions based on the Deep Health framework.
+      </p>
+    </div>
+  </div>
+  </body></html>`;
+}
+
+/* ============================================================
+   DATA SUBMISSION
+   ============================================================ */
+async function submitData(results) {
+  if (!CONFIG.ENDPOINT_URL) return true; // no endpoint configured, silently skip
+  const durationMins = Math.round((Date.now() - state.startTime) / 60000);
+  const payload = {
+    timestamp: new Date().toISOString(),
+    sessionId: state.sessionId,
+    durationMins,
+    stressScore: results.stressPct,
+    stageNum: results.stage.n,
+    stageName: results.stage.name,
+    dh: Object.fromEntries(results.dh.map(d=>[d.id,d.pct])),
+    stress: Object.fromEntries(results.stress.map(d=>[d.id,d.pct])),
+    coping: {
+      overall: results.copingPct,
+      ...Object.fromEntries(COPING_QS.map((q,i)=>[q.id, toPct(state.cA[q.id]||1,1)]))
+    },
+    email: state.email || null,
+    emailHtml: state.email ? generateEmailHTML(results) : null,
+  };
+  try {
+    await fetch(CONFIG.ENDPOINT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      mode: "no-cors"
+    });
+    return true;
+  } catch(e) {
+    console.warn("Submission failed:", e);
+    return false;
+  }
+}
+
+/* ============================================================
+   RENDER HELPERS
+   ============================================================ */
+function progressPct() {
+  const answered = Object.keys(state.dhA).length + Object.keys(state.sA).length + Object.keys(state.cA).length;
+  return Math.round((answered / TOTAL_Q) * 100);
+}
+
+function qHeader(sectionLabel, sectionQ, sectionTotal, onBack) {
+  return `
+    <div class="wrap q-header">
+      <button class="back-btn" onclick="${onBack}">← Back</button>
+      <div class="q-counter">
+        <span class="part-label">${sectionLabel}</span>
+        <span class="n">Question ${sectionQ} of ${sectionTotal}</span>
+      </div>
+    </div>
+    <div class="wrap"><div class="progress-bar"><div class="progress-fill" style="width:${progressPct()}%"></div></div></div>`;
+}
+
+function optionsList(opts, accentCol, answerKey, isStateKey) {
+  return opts.map((label, i) => {
+    const val = i + 1;
+    const cur = isStateKey ? state.cA[answerKey] : (answerKey !== undefined ? state[isStateKey ? 'cA' : 'dhA'][answerKey] : null);
+    return `<button class="opt" style="--accent:${accentCol}" onclick="selectAnswer('${answerKey}',${val},${isStateKey})" data-val="${val}">${label}<span class="opt-dot"></span></button>`;
+  }).join('');
+}
+
+/* ============================================================
+   RENDER SCREENS
+   ============================================================ */
+function renderIntro() {
+  return `
+  <div class="intro-wrap fade-in">
+    <div style="font-size:36px;margin-bottom:18px">🌿</div>
+    <h1 style="font-size:32px;line-height:1.25;font-weight:normal;margin-bottom:16px">Your Wellbeing &amp; Coping Check-In</h1>
+    <p style="font-size:15px;line-height:1.75;color:#5A4D44;font-family:var(--sans);margin-bottom:12px">This check-in gives you a layered, personalised picture of three things: how your deep health is holding up, where stress is showing up, and how equipped you are to cope and recover.</p>
+    <p style="font-size:15px;line-height:1.75;color:#5A4D44;font-family:var(--sans);margin-bottom:26px">Answer based on the <strong>past two to four weeks</strong>. There are no wrong answers — just honest ones.</p>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:28px">
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border2)">
+        <div style="width:3px;height:32px;background:#5B7FA6;border-radius:2px;flex-shrink:0"></div>
+        <div><div style="font-size:13px;font-weight:600;font-family:var(--sans);color:var(--text)">Part 1 — Your Wellbeing</div><div style="font-size:11px;font-family:var(--sans);color:var(--muted)">6 dimensions · 2 questions each</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border2)">
+        <div style="width:3px;height:32px;background:#C17B4E;border-radius:2px;flex-shrink:0"></div>
+        <div><div style="font-size:13px;font-weight:600;font-family:var(--sans);color:var(--text)">Part 2 — Your Stressors</div><div style="font-size:11px;font-family:var(--sans);color:var(--muted)">4 areas · 4 questions each</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0">
+        <div style="width:3px;height:32px;background:#7A6B8A;border-radius:2px;flex-shrink:0"></div>
+        <div><div style="font-size:13px;font-weight:600;font-family:var(--sans);color:var(--text)">Part 3 — Your Coping Capacity</div><div style="font-size:11px;font-family:var(--sans);color:var(--muted)">5 questions</div></div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);font-family:var(--sans);margin-bottom:26px">33 questions · about 8 minutes · 🔒 Your responses are completely anonymous</p>
+    <button class="btn btn-dark" onclick="go('deephealth')">Start My Check-In</button>
+    <p style="font-size:10px;color:var(--faint);margin-top:14px;text-align:center;font-family:var(--sans);line-height:1.6">A self-awareness tool grounded in wellbeing and stress research. Not a clinical test.</p>
+  </div>`;
+}
+
+
+function renderDHQuestion() {
+  const dimIdx  = Math.floor(state.dhIdx / 2);
+  const qInDim  = state.dhIdx % 2;
+  const dim     = DH_DIMS[dimIdx];
+  const cur     = state.dhA[state.dhIdx];
+  const isLast  = state.dhIdx === TOTAL_DH - 1;
+  return `
+  ${qHeader('Your Wellbeing', state.dhIdx+1, TOTAL_DH, 'navBack()')}
+  <div class="wrap fade-in">
+    <div class="q-body">
+      <div class="dim-label" style="color:${dim.col}">${dim.icon} ${dim.label} · ${qInDim+1} of 2</div>
+      <div class="dim-desc">${dim.desc}</div>
+      <p class="q-text">${dim.qs[qInDim]}</p>
+      <div class="opts" id="opts-dh" style="--accent:${dim.col}">
+        ${POS_OPTS.map((label,i)=>`<button class="opt ${cur===i+1?'selected':''}" style="--accent:${dim.col}" onclick="pickDH(${i+1})" data-val="${i+1}">${label}<span class="opt-dot"></span></button>`).join('')}
+      </div>
+      <button class="btn" style="background:${cur?dim.col:'var(--border)'}; color:${cur?'#FFF':'var(--faint)'}" onclick="nextDH()" ${cur?'':'disabled'}>
+        ${isLast ? 'Continue to Part 2' : 'Next'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderBridge(emoji, title, body, btnLabel, btnCol, nextPhase) {
+  return `
+  <div class="bridge fade-in">
+    <div class="bridge-emoji">${emoji}</div>
+    <h2>${title}</h2>
+    <p>${body}</p>
+    <button class="btn" style="background:${btnCol};color:#FFF" onclick="go('${nextPhase}')">${btnLabel}</button>
+  </div>`;
+}
+
+function renderSQuestion() {
+  const domIdx  = Math.floor(state.sIdx / 4);
+  const qInDom  = state.sIdx % 4;
+  const dom     = S_DOMAINS[domIdx];
+  const cur     = state.sA[state.sIdx];
+  const isLast  = state.sIdx === TOTAL_S - 1;
+  return `
+  ${qHeader('Your Stressors', state.sIdx+1, TOTAL_S, 'navBack()')}
+  <div class="wrap fade-in">
+    <div class="q-body">
+      <div class="dim-label" style="color:var(--muted)">${dom.icon} ${dom.label}</div>
+      <p class="q-text" style="margin-top:10px">${dom.qs[qInDom]}</p>
+      <div class="opts">
+        ${STRESS_OPTS.map((label,i)=>`<button class="opt ${cur===i+1?'selected':''}" onclick="pickS(${i+1})" data-val="${i+1}">${label}<span class="opt-dot"></span></button>`).join('')}
+      </div>
+      <button class="btn btn-terra" onclick="nextS()" ${cur?'':'disabled'}>
+        ${isLast ? 'Continue to Part 3' : 'Next'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderCQuestion() {
+  const cq     = COPING_QS[state.cIdx];
+  const cur    = state.cA[cq.id];
+  const isLast = state.cIdx === TOTAL_C - 1;
+  return `
+  ${qHeader('Coping Capacity', state.cIdx+1, TOTAL_C, 'navBack()')}
+  <div class="wrap fade-in">
+    <div class="q-body">
+      <div class="dim-label" style="color:#7A6B8A">🛡️ Coping Capacity · ${state.cIdx+1} of ${TOTAL_C}</div>
+      <p class="q-text" style="margin-top:10px">${cq.q}</p>
+      <div class="opts" style="--accent:#7A6B8A">
+        ${POS_OPTS.map((label,i)=>`<button class="opt ${cur===i+1?'selected':''}" style="--accent:#7A6B8A" onclick="pickC('${cq.id}',${i+1})" data-val="${i+1}">${label}<span class="opt-dot"></span></button>`).join('')}
+      </div>
+      <button class="btn" style="background:${cur?'#7A6B8A':'var(--border)'};color:${cur?'#FFF':'var(--faint)'}" onclick="nextC()" ${cur?'':'disabled'}>
+        ${isLast ? 'See My Results' : 'Next'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderProcessing() {
+  return `
+  <div style="text-align:center;padding:100px 24px 0;max-width:520px;margin:0 auto" class="fade-in">
+    <div style="font-size:40px;margin-bottom:20px">⏳</div>
+    <p style="font-size:16px;color:var(--muted);font-family:var(--sans)">Preparing your results…</p>
+  </div>`;
+}
+
+function renderResults(results) {
+  const { dh, stress, stressPct, stage, copingPct, copingScores } = results;
+  const summary  = makeSummary(stage, dh, copingPct);
+  const insights = makeInsights(stage, dh, copingPct);
+  const copBand  = getCopingBand(copingPct);
+  const today    = new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+
+  const stageTrack = STAGES.map(s => {
+    const h  = s.n === stage.n ? 9 : 5;
+    const bg = s.n === stage.n ? stage.col : s.n < stage.n ? stage.col+'88' : '#DDD5C8';
+    return `<div class="stage-bar" style="height:${h}px;background:${bg}"></div>`;
+  }).join('');
+
+  const insightCards = insights.map(i => `
+    <div class="insight-card">
+      <span class="insight-emoji">${i.e}</span>
+      <p class="insight-text">${i.t}</p>
+    </div>`).join('');
+
+  const dhBars = dh.map(d => {
+    const fb = d.pct < 40 ? d.low : d.pct < 65 ? d.med : d.high;
+    return `
+      <div class="dh-dim">
+        <div class="dh-row">
+          <span class="dh-icon">${d.icon}</span>
+          <span class="dh-name">${d.label}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${d.pct}%;background:${d.col}" data-w="${d.pct}"></div></div>
+          <span class="bar-pct" style="color:${d.col}">${d.pct}%</span>
+        </div>
+        <p class="dh-fb">${fb}</p>
+      </div>`;
+  }).join('');
+
+  const copSubBars = COPING_QS.map((q,i) => {
+    const pct = toPct(state.cA[q.id]||1, 1);
+    const shortQ = q.q.replace(/^How /,'').replace(/^how /,'').split('?')[0];
+    return `
+      <div class="coping-sub">
+        <div class="coping-sub-label">${shortQ.charAt(0).toUpperCase()+shortQ.slice(1)}</div>
+        <div class="coping-sub-bar"><div class="coping-sub-fill" style="width:${pct}%;background:${copBand.col}" data-w="${pct}"></div></div>
+      </div>`;
+  }).join('');
+
+  const domainCards = stress.map(d => {
+    const risk = getDomainRisk(d.pct);
+    const fb   = d.pct < 40 ? d.low : d.pct < 70 ? d.med : d.high;
+    return `
+      <div class="domain-card" style="border-left:3px solid ${d.col};border-color:${d.col}20;border-left-color:${d.col}">
+        <div class="domain-header">
+          <span class="domain-label">${d.icon} ${d.label}</span>
+          <div class="domain-right">
+            <span class="domain-score" style="color:${d.col}">${d.pct}%</span>
+            <span class="risk-badge" style="background:${risk.bg};color:${risk.col}">${risk.label}</span>
+          </div>
+        </div>
+        <div class="bar-track" style="height:3px;margin-bottom:8px"><div class="bar-fill" style="width:${d.pct}%;background:${d.col}" data-w="${d.pct}"></div></div>
+        <p class="domain-fb">${fb}</p>
+      </div>`;
+  }).join('');
+
+  const donutLegend = stress.map(d => `
+    <div class="legend-item"><div class="legend-dot" style="background:${d.col}"></div><span>${d.short}</span><strong style="color:${d.col}">${d.pct}%</strong></div>`).join('');
+
+  return `
+  <div style="max-width:520px;margin:0 auto;padding:44px 24px 0" class="fade-in">
+
+    <!-- 1. Summary -->
+    <p class="datestamp">${today} · ${CONFIG.ORG_NAME}</p>
+    <p class="summary-para">${summary}</p>
+
+    <!-- 2. Score + Stage -->
+    <div class="score-row" id="scoreRow">
+      <div class="score-big" style="color:${stage.txt}">${stressPct}%</div>
+      <div class="score-meta">
+        <div class="score-label">Stress score</div>
+        <div class="stage-badge" style="background:${stage.col}22;border:1px solid ${stage.col}44">
+          <span class="stage-badge-num" style="color:${stage.txt}">Stage ${stage.n}</span>
+          <span class="stage-badge-sep" style="background:${stage.col}"></span>
+          <span class="stage-badge-name" style="color:${stage.txt}">${stage.name}</span>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--faint);font-family:var(--sans);text-align:center;margin:0 0 8px;line-height:1.5">Your stress score and coping capacity are separate measures — it's possible to be under strain and still have strong coping resources.</p>
+    <div style="margin-bottom:10px">
+      <div class="stage-track">${stageTrack}</div>
+      <div class="stage-labels"><span>Stage 1</span><span>Stage 12</span></div>
+    </div>
+    <div class="action-prompt">
+      <span class="action-arrow" style="color:${stage.txt}">→</span>
+      <span class="action-text" style="color:${stage.txt}"><strong>One useful step:</strong> ${stage.action}</span>
+    </div>
+
+    <!-- 3. Insight cards -->
+    <div class="divider"><div class="divider-line"></div><span class="divider-label">What this means for you</span><div class="divider-line"></div></div>
+    ${insightCards}
+
+    <!-- 4. Deep health -->
+    <div class="divider"><div class="divider-line"></div><span class="divider-label">Your wellbeing foundation</span><div class="divider-line"></div></div>
+    <p style="font-size:11px;color:var(--faint);font-family:var(--sans);text-align:center;margin-bottom:14px;line-height:1.5">Six dimensions of health · two questions each</p>
+    <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+    ${dhBars}
+
+    <!-- 5. Coping capacity -->
+    <div class="divider"><div class="divider-line"></div><span class="divider-label">Your coping capacity</span><div class="divider-line"></div></div>
+    <div class="coping-card" style="border-left:4px solid ${copBand.col};border:1px solid ${copBand.col}28;border-left-width:4px">
+      <div class="coping-top">
+        <div>
+          <div class="coping-label">🛡️ Overall capacity</div>
+          <div class="coping-score" style="color:${copBand.col}">${copingPct}%</div>
+        </div>
+        <div class="coping-badge" style="background:${copBand.col}18;border:1px solid ${copBand.col}40;color:${copBand.col}">${copBand.label}</div>
+      </div>
+      <div class="bar-track" style="height:5px;margin-bottom:14px"><div class="bar-fill" style="width:${copingPct}%;background:${copBand.col}" data-w="${copingPct}"></div></div>
+      <div class="coping-subs">${copSubBars}</div>
+    </div>
+
+    <!-- 6. Stress breakdown -->
+    <div class="divider"><div class="divider-line"></div><span class="divider-label">Where stress is showing up</span><div class="divider-line"></div></div>
+    <p style="font-size:11px;color:var(--faint);font-family:var(--sans);text-align:center;margin-bottom:14px;line-height:1.5">Your four stress areas and how they contribute to the overall score</p>
+    <div class="donut-wrap"><canvas id="donutChart"></canvas><div class="donut-center"><div class="donut-center-label">4 areas</div></div></div>
+    <div class="donut-legend">${donutLegend}</div>
+    ${domainCards}
+
+    <!-- Footer -->
+    <div class="results-footer">
+      <p>Stress stages based on Freudenberger &amp; North (1992). Wellbeing dimensions based on the Deep Health framework. A self-awareness tool — not a clinical diagnosis.</p>
+      <button class="btn-ghost btn" onclick="startAgain()" style="margin:0 auto">Check In Again</button>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   NAVIGATION & STATE UPDATES
+   ============================================================ */
+function go(phase) {
+  state.phase = phase;
+  render();
+}
+
+function navBack() {
+  if (state.phase === 'deephealth') {
+    if (state.dhIdx > 0) { state.dhIdx--; render(); }
+    else go('intro');
+  } else if (state.phase === 'stress') {
+    if (state.sIdx > 0) { state.sIdx--; render(); }
+    else go('stress_bridge');
+  } else if (state.phase === 'coping') {
+    if (state.cIdx > 0) { state.cIdx--; render(); }
+    else go('coping_bridge');
+  }
+}
+
+
+function pickDH(val) {
+  state.dhA[state.dhIdx] = val;
+  render();
+}
+
+function nextDH() {
+  if (!state.dhA[state.dhIdx]) return;
+  if (state.dhIdx < TOTAL_DH - 1) { state.dhIdx++; render(); }
+  else go('stress_bridge');
+}
+
+function pickS(val) {
+  state.sA[state.sIdx] = val;
+  render();
+}
+
+function nextS() {
+  if (!state.sA[state.sIdx]) return;
+  if (state.sIdx < TOTAL_S - 1) { state.sIdx++; render(); }
+  else go('coping_bridge');
+}
+
+function pickC(id, val) {
+  state.cA[id] = val;
+  render();
+}
+
+function nextC() {
+  const cq = COPING_QS[state.cIdx];
+  if (!state.cA[cq.id]) return;
+  if (state.cIdx < TOTAL_C - 1) { state.cIdx++; render(); }
+  else go('email_capture');
+}
+
+async function finishSurvey() {
+  go('processing');
+  const results = computeResults();
+  await submitData(results);
+  state.phase = 'results';
+  state.results = results;
+  render();
+  initCharts(results);
+}
+
+function initCharts(results) {
+  setTimeout(notifyHeight, 600); // charts may change height
+  // Radar chart (deep health)
+  const radarCtx = document.getElementById('radarChart');
+  if (radarCtx) {
+    new Chart(radarCtx, {
+      type: 'radar',
+      data: {
+        labels: results.dh.map(d => d.label),
+        datasets: [{
+          data: results.dh.map(d => d.pct),
+          borderColor: '#5B7FA6',
+          backgroundColor: 'rgba(91,127,166,0.15)',
+          borderWidth: 2,
+          pointBackgroundColor: '#5B7FA6',
+          pointRadius: 4,
+        }]
+      },
+      options: {
+        scales: { r: { min:0, max:100, ticks:{display:false}, grid:{color:'#E8E2DA'}, pointLabels:{font:{size:11,family:"'Helvetica Neue',sans-serif"},color:'#6B5C52'} } },
+        plugins: { legend:{display:false}, tooltip:{enabled:false} }
+      }
+    });
+  }
+  // Doughnut chart (stress domains)
+  const donutCtx = document.getElementById('donutChart');
+  if (donutCtx) {
+    new Chart(donutCtx, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [1,1,1,1],
+          backgroundColor: results.stress.map(d=>d.col),
+          borderWidth: 0, hoverOffset: 0,
+        }]
+      },
+      options: { cutout:'65%', plugins:{tooltip:{enabled:false},legend:{display:false}}, animation:{duration:800} }
+    });
+  }
+}
+
+function startAgain() {
+  state.phase = 'intro';
+  state.dhA = {}; state.sA = {}; state.cA = {};
+  state.dhIdx = 0; state.sIdx = 0; state.cIdx = 0;
+  state.sessionId = uuid();
+  state.startTime = Date.now();
+  state.results = null;
+  state.email = null;
+  render();
+}
+
+
+/* ── iframe auto-resize (sends height to WordPress parent) ─────────────── */
+function notifyHeight() {
+  try {
+    const h = Math.max(document.body.scrollHeight, document.getElementById('app').scrollHeight) + 40;
+    window.parent.postMessage({ type: 'wbci_resize', height: h }, '*');
+  } catch(e) {}
+}
+
+/* ============================================================
+   MAIN RENDER
+   ============================================================ */
+function render() {
+  const app = document.getElementById('app');
+  switch(state.phase) {
+    case 'intro':         app.innerHTML = renderIntro(); break;
+    case 'deephealth':    app.innerHTML = renderDHQuestion(); break;
+    case 'stress_bridge': app.innerHTML = renderBridge('🔍','Part 2: Your Stressors','Now that we have a picture of your wider wellbeing, let\'s look at where stress is landing — across your commitments, mental space, emotions, and energy. These questions use a different scale: how often you experience each thing.','Continue','#C17B4E','stress'); break;
+    case 'stress':        app.innerHTML = renderSQuestion(); break;
+    case 'coping_bridge': app.innerHTML = renderBridge('🛡️','Part 3: Your Coping Capacity','Five final questions about how equipped you are to handle and recover from stress — your ability to stay calm under pressure, adapt when things go sideways, and reach out when you need support.','Final Section','#7A6B8A','coping'); break;
+    case 'coping':        app.innerHTML = renderCQuestion(); break;
+    case 'email_capture': app.innerHTML = renderEmailCapture(); break;
+    case 'processing':    app.innerHTML = renderProcessing(); break;
+    case 'results':       app.innerHTML = renderResults(state.results); break;
+  }
+  window.scrollTo(0, 0);
+  setTimeout(notifyHeight, 120);
+}
+
+render();
+</script>
+</body>
+</html>
