@@ -196,7 +196,7 @@
 const CONFIG = {
   // Paste your Google Apps Script web app URL here after setup
   // Leave empty to run without data collection (results still shown)
-  ENDPOINT_URL: "https://script.google.com/macros/s/AKfycbwNwUhW_lvFK6zkwdT9zjoXJzmTNOUaJpVjPC_K2ctdlxLtLPo-Z6HeCRwESL3mJDAU/exec",
+  ENDPOINT_URL: "",
 
   ORG_NAME: "Your Organisation",
 
@@ -223,32 +223,32 @@ const STAGES = [
 // Deep health: 6 dimensions, 2 questions each (indices 0–11)
 const DH_DIMS = [
   { id:"physical",     label:"Physical",     icon:"⚡", col:"#5A8A6A", desc:"Feeling vibrant, energised, and functioning well",
-    qs:["How physically energised and vital do you feel on an average day?","How rested and recovered do you feel when you wake up?"],
+    qs:[{q:"Over the past month, how physically energised and vital have you felt day to day?",hint:null},{q:"Over the past month, how rested and recovered have you felt when you wake up?",hint:null}],
     low:"Your physical foundation — energy and sleep — is under noticeable strain. Restoring these tends to have the highest ripple effect on everything else.",
     med:"Your physical energy and sleep are holding, but there's room to improve. Even modest gains in recovery tend to shift a lot of other things for the better.",
     high:"Your physical energy looks strong. A rested body gives you significantly more capacity to handle everything else — a real asset." },
   { id:"emotional",    label:"Emotional",    icon:"💛", col:"#C9972A", desc:"Recognising, expressing, and working through emotions",
-    qs:["How aware are you of what you're feeling and what's driving those feelings?","How well can you calm yourself down when you're stressed, upset, or anxious?"],
+    qs:[{q:"Over the past month, how aware have you been of what you're feeling and what's driving it?",hint:"e.g. noticing when you're frustrated before it affects how you speak to someone"},{q:"Over the past month, how well have you been able to calm yourself down when stressed or anxious?",hint:"e.g. being able to step back from a difficult thought rather than letting it spiral"}],
     low:"Your emotional self-awareness and regulation feel stretched. Building even one small practice around noticing what you're feeling — without judgement — can start to rebuild this foundation.",
     med:"You have some emotional awareness but calming down under pressure can be a challenge. That awareness is the important starting point.",
     high:"Your emotional self-awareness and ability to regulate under pressure are genuine strengths — one of the most valuable capacities in managing stress." },
   { id:"mental",       label:"Mental",       icon:"🔷", col:"#5B7FA6", desc:"Being alert, focused, and confident in your own judgement",
-    qs:["How mentally sharp, clear, and focused do you feel on an average day?","How confident do you feel in your ability to handle whatever comes up?"],
+    qs:[{q:"Over the past month, how mentally sharp, clear, and focused have you felt?",hint:null},{q:"Over the past month, how confident have you felt in your ability to handle what comes up?",hint:"e.g. feeling able to figure things out even when they're unfamiliar or difficult"}],
     low:"Your mental clarity and confidence feel depleted. Reducing the number of decisions and inputs in your day — even temporarily — can make a meaningful difference.",
     med:"Your mental function is holding but not at its sharpest. Protecting some genuine uninterrupted thinking time is usually the highest-leverage change here.",
     high:"Your mental clarity and self-confidence are looking strong — lean on that clear-headedness when pressure makes everything feel more complicated than it is." },
-  { id:"existential",  label:"Existential",  icon:"✨", col:"#7A6B8A", desc:"Feeling a sense of meaning, purpose, and values alignment",
-    qs:["How connected do you feel to a sense of meaning or purpose in what you do?","How well does the way you're living right now reflect your deeper values?"],
+  { id:"existential",  label:"Purpose & Meaning", icon:"✨", col:"#7A6B8A", desc:"Feeling that what you do matters and reflects what you value",
+    qs:[{q:"Over the past month, how connected have you felt to a sense of meaning or purpose in what you do?",hint:"e.g. feeling your work matters, or that you're heading somewhere that feels right to you"},{q:"Over the past month, how well has the way you're living reflected what you actually value?",hint:"e.g. spending time on things you genuinely care about, not just obligations and expectations"}],
     low:"A sense of meaning and values alignment feels harder to access right now. Small reconnections with what matters most to you can be surprisingly restorative.",
     med:"You have a sense of purpose but there's some distance between how you're living and what you most value. That gap is usually closable with small, intentional changes.",
     high:"You have a clear sense of what matters and why, and your life broadly reflects those values — one of the most powerful stabilisers when stress gets high." },
   { id:"relational",   label:"Relational",   icon:"🤝", col:"#C17B4E", desc:"Feeling connected, supported, and authentically known",
-    qs:["How supported and genuinely connected do you feel with the people around you?","How authentic can you be with the people you spend the most time with?"],
+    qs:[{q:"Over the past month, how supported and genuinely connected have you felt with the people around you?",hint:"e.g. having someone who notices when you're not yourself, or who you can be honest with"},{q:"Over the past month, how authentic have you been able to be with the people you spend most time with?",hint:"e.g. being able to say how you really feel, rather than just performing 'fine'"}],
     low:"Your sense of connection and support from others is lower than you'd want. Even one genuine conversation with someone you trust can shift this more than you'd expect.",
     med:"You have some connection around you, but the depth or authenticity of support could be stronger. Being more open about what you're carrying is often the step that changes this.",
     high:"The support and authentic connection around you is a genuine resource — arguably the most important protective factor when stress is high." },
   { id:"environmental",label:"Environmental",icon:"🏡", col:"#4A7A8A", desc:"Your surroundings actively supporting your health and goals",
-    qs:["How well does your home and daily environment actively support your wellbeing?","How safe, stable, and supportive does your broader work and community context feel?"],
+    qs:[{q:"Over the past month, how well has your home and daily environment supported your wellbeing?",hint:"e.g. a space that feels calm, or that helps you switch off at the end of the day"},{q:"Over the past month, how safe, stable, and supported have you felt in your broader work and community context?",hint:"e.g. not feeling like you're managing too many external pressures at once"}],
     low:"Your environment may be working against your recovery rather than supporting it. Small, deliberate changes to your immediate surroundings can have an outsized effect.",
     med:"Your environment is broadly okay, but there's room to make it work harder for you. A few deliberate changes can shift the conditions for recovery meaningfully.",
     high:"Your environment looks like it's supporting you well — your surroundings are active contributors to your wellbeing, which is an underrated foundation." },
@@ -280,16 +280,36 @@ const S_DOMAINS = [
 
 // Coping: 5 questions (indices 0–4)
 const COPING_QS = [
-  { id:"calm",     q:"When you're under pressure, how well can you slow down, think clearly, and avoid just reacting?" },
-  { id:"habits",   q:"How well can you manage difficult feelings without leaning on food, alcohol, scrolling, or other crutches?" },
-  { id:"adapt",    q:"When plans or routines get disrupted, how well do you adapt without it derailing you?" },
-  { id:"reach",    q:"How readily do you reach out to others for help, perspective, or support when you're struggling?" },
-  { id:"belief",   q:"How strongly do you believe that your efforts to manage stress and make changes will actually make a difference?" },
+  { id:"calm",
+    q:"When you're under pressure, how well can you slow down, think clearly, and avoid just reacting?",
+    label:"Staying calm under pressure",
+    example:"e.g. pausing before replying to a difficult message, rather than reacting straight away",
+    tip:"Try a brief pause before responding to pressure — even a few slow breaths creates space between the trigger and your reaction. That gap is where change happens." },
+  { id:"habits",
+    q:"How well can you manage difficult feelings without leaning on food, alcohol, scrolling, or other crutches?",
+    label:"Managing without unhelpful crutches",
+    example:"e.g. not reaching for your phone, food, or a drink when you feel anxious or overwhelmed",
+    tip:"Simply noticing which habits you reach for when stressed begins to create a gap between trigger and response. Awareness alone is often the first meaningful change." },
+  { id:"adapt",
+    q:"When plans or routines get disrupted, how well do you adapt without it derailing you?",
+    label:"Adapting when plans change",
+    example:"e.g. a meeting cancelled, a plan shifting, or your day not going as expected",
+    tip:"Flexibility is a skill that builds with gentle practice. Try deliberately varying one small routine to rehearse the idea that disruption doesn't have to become a crisis." },
+  { id:"reach",
+    q:"How readily do you reach out to others for help, perspective, or support when you're struggling?",
+    label:"Reaching out for support",
+    example:"e.g. telling someone how you're really feeling, or asking for help with something",
+    tip:"Support rarely arrives without asking. Starting with one honest conversation with someone you trust is usually enough to shift something — and easier than it feels beforehand." },
+  { id:"belief",
+    q:"How strongly do you believe that your efforts to manage stress and make changes will actually make a difference?",
+    label:"Belief that effort makes a difference",
+    example:"e.g. feeling that working on this will actually lead to something changing for you",
+    tip:"Small, visible wins rebuild self-efficacy. Completing one manageable change fully — before adding another — tends to rebuild confidence faster than bigger, harder efforts." },
 ];
 
 const STRESS_OPTS = ["Rarely","Sometimes","Often","Almost Always"];
-const POS_OPTS    = ["Not at all","A little","Quite","Very much"];
-const TOTAL_DH    = DH_DIMS.length * 2;  // 12
+const POS_OPTS    = ["Not at all","A little","Quite a lot","Very much"];
+const TOTAL_DH    = DH_DIMS.reduce((s,d) => s + d.qs.length, 0);  // 12
 const TOTAL_S     = S_DOMAINS.length * 4; // 16
 const TOTAL_C     = COPING_QS.length;     // 5
 const TOTAL_Q     = TOTAL_DH + TOTAL_S + TOTAL_C; // 33
@@ -355,6 +375,11 @@ function getCopingBand(pct) {
   return pct >= 65 ? { label:"Strong",        col:"#5A8A6A" }
        : pct >= 40 ? { label:"Developing",    col:"#C9972A" }
        :             { label:"Needs support",  col:"#B86040" };
+}
+function getCopingFeedback(pct) {
+  if (pct < 40) return "Your coping resources feel stretched right now. This is one of the most important areas to invest in — even small changes to how you handle pressure tend to have a meaningful ripple effect on everything else.";
+  if (pct < 65) return "You have some solid coping foundations with room to strengthen specific areas. The breakdown below shows where the most useful work is — and each includes a practical starting point.";
+  return "Your coping capacity looks genuinely strong. You have good tools available — the key is using them deliberately when pressure rises, rather than waiting until you feel depleted.";
 }
 
 /* ============================================================
@@ -652,13 +677,17 @@ function renderDHQuestion() {
   const dim     = DH_DIMS[dimIdx];
   const cur     = state.dhA[state.dhIdx];
   const isLast  = state.dhIdx === TOTAL_DH - 1;
+  const qObj    = dim.qs[qInDim];
+  const qText   = typeof qObj === 'string' ? qObj : qObj.q;
+  const hint    = typeof qObj === 'object' && qObj.hint ? qObj.hint : null;
   return `
   ${qHeader('Your Wellbeing', state.dhIdx+1, TOTAL_DH, 'navBack()')}
   <div class="wrap fade-in">
     <div class="q-body">
       <div class="dim-label" style="color:${dim.col}">${dim.icon} ${dim.label} · ${qInDim+1} of 2</div>
       <div class="dim-desc">${dim.desc}</div>
-      <p class="q-text">${dim.qs[qInDim]}</p>
+      <p class="q-text">${qText}</p>
+      ${hint ? `<p style="font-size:12px;color:var(--faint);font-family:var(--sans);font-style:italic;margin:-18px 0 22px;line-height:1.5">${hint}</p>` : ''}
       <div class="opts" id="opts-dh" style="--accent:${dim.col}">
         ${POS_OPTS.map((label,i)=>`<button class="opt ${cur===i+1?'selected':''}" style="--accent:${dim.col}" onclick="pickDH(${i+1})" data-val="${i+1}">${label}<span class="opt-dot"></span></button>`).join('')}
       </div>
@@ -711,6 +740,7 @@ function renderCQuestion() {
     <div class="q-body">
       <div class="dim-label" style="color:#7A6B8A">🛡️ Coping Capacity · ${state.cIdx+1} of ${TOTAL_C}</div>
       <p class="q-text" style="margin-top:10px">${cq.q}</p>
+      ${cq.example ? `<p style="font-size:12px;color:var(--faint);font-family:var(--sans);font-style:italic;margin:-18px 0 22px;line-height:1.5">${cq.example}</p>` : ''}
       <div class="opts" style="--accent:#7A6B8A">
         ${POS_OPTS.map((label,i)=>`<button class="opt ${cur===i+1?'selected':''}" style="--accent:#7A6B8A" onclick="pickC('${cq.id}',${i+1})" data-val="${i+1}">${label}<span class="opt-dot"></span></button>`).join('')}
       </div>
@@ -764,11 +794,17 @@ function renderResults(results) {
 
   const copSubBars = COPING_QS.map((q,i) => {
     const pct = toPct(state.cA[q.id]||1, 1);
-    const shortQ = q.q.replace(/^How /,'').replace(/^how /,'').split('?')[0];
+    const showTip = pct < 50 && q.tip;
     return `
-      <div class="coping-sub">
-        <div class="coping-sub-label">${shortQ.charAt(0).toUpperCase()+shortQ.slice(1)}</div>
-        <div class="coping-sub-bar"><div class="coping-sub-fill" style="width:${pct}%;background:${copBand.col}" data-w="${pct}"></div></div>
+      <div style="margin-bottom:${showTip?'12px':'8px'}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:${showTip?'5px':'0'}">
+          <span style="flex:1;font-size:12px;color:#5A4D44;font-family:var(--sans);line-height:1.4">${q.label}</span>
+          <div style="width:80px;height:5px;background:var(--border2);border-radius:3px;flex-shrink:0">
+            <div style="height:100%;width:${pct}%;background:${copBand.col};border-radius:3px;opacity:.85"></div>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:${copBand.col};font-family:var(--sans);width:28px;text-align:right">${pct}%</span>
+        </div>
+        ${showTip ? `<p style="font-size:11px;line-height:1.6;color:#6B5C52;font-family:var(--sans);margin:0;font-style:italic;padding-left:1px">${q.tip}</p>` : ''}
       </div>`;
   }).join('');
 
@@ -842,6 +878,7 @@ function renderResults(results) {
         <div class="coping-badge" style="background:${copBand.col}18;border:1px solid ${copBand.col}40;color:${copBand.col}">${copBand.label}</div>
       </div>
       <div class="bar-track" style="height:5px;margin-bottom:14px"><div class="bar-fill" style="width:${copingPct}%;background:${copBand.col}" data-w="${copingPct}"></div></div>
+      <p style="font-size:13px;line-height:1.65;color:#4A3F36;font-family:var(--sans);margin:12px 0 14px">${getCopingFeedback(copingPct)}</p>
       <div class="coping-subs">${copSubBars}</div>
     </div>
 
